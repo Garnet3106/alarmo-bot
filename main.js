@@ -6,6 +6,7 @@ const token = process.env.DISCORD_BOT_TOKEN;
 const prefix = '!';
 
 
+
 /* HTTPSレスポンス */
 
 
@@ -53,7 +54,25 @@ function command(message) {
 
 function command_help(message) {
     try {
-        message.channel.send(message.content);
+        message.channel.send({
+            embed: {
+                description: '**Alarmo BOT β - ヘルプ**',
+                fields: [
+                    {
+                        name: prefix + 'help',
+                        value: 'ヘルプを表示する'
+                    },
+                    {
+                        name: prefix + 'setalerm',
+                        value: 'アラームチャンネルを設定する'
+                    },
+                    {
+                        name: prefix + 'unsetalerm',
+                        value: 'アラームチャンネルの設定を外す'
+                    }
+                ]
+            }
+        });
     } catch(e) {
         console.log(e);
     }
