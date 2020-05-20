@@ -3,8 +3,7 @@ const client = new Discord.Client();
 const fs = require('fs');
 const http = require('http');
 const token = process.env.DISCORD_BOT_TOKEN;
-const prefix = '!';
-
+const prefix = 'eew.';
 
 
 /* HTTPSレスポンス */
@@ -21,6 +20,7 @@ http.createServer(function(req, res) {
 
 client.on('ready', () => {
     console.log('Botの起動が完了しました。');
+    loadAlermChannels();
 });
 
 
@@ -44,9 +44,17 @@ client.on('message', message => {
 
 
 function command(message) {
-    switch(message.content.split(' ')[0].slice(1)) {
+    switch(message.content.split(' ')[0].slice(prefix.length)) {
         case 'help':
         command_help(message);
+        break;
+
+        case 'set':
+        command_set(message);
+        break;
+
+        case 'unset':
+        command_unset(message);
         break;
     }
 }
@@ -63,11 +71,11 @@ function command_help(message) {
                         value: 'ヘルプを表示する'
                     },
                     {
-                        name: prefix + 'setalerm',
+                        name: prefix + 'set',
                         value: 'アラームチャンネルを設定する'
                     },
                     {
-                        name: prefix + 'unsetalerm',
+                        name: prefix + 'unset',
                         value: 'アラームチャンネルの設定を外す'
                     }
                 ]
@@ -76,6 +84,67 @@ function command_help(message) {
     } catch(e) {
         console.log(e);
     }
+}
+
+
+function command_set(message) {
+    try {
+        let ids = message.channel.guild.id + ':' + message.channel.id;
+        let index = alermChannels.indexOf(ids);
+
+        if(index == -1) {
+            alermChannels.push(ids);
+            message.channel.send({
+                embed: {
+                    description: 'アラームチャンネルを設定しました。'
+                }
+            });
+        } else {
+            message.channel.send({
+                embed: {
+                    description: '既にアラームチャンネルに設定されています。'
+                }
+            });
+        }
+    } catch(e) {
+        console.log(e);
+    }
+}
+
+
+function command_unset(message) {
+    try {
+        let ids = message.channel.guild.id + ':' + message.channel.id;
+        let index = alermChannels.indexOf(ids);
+
+        if(index != -1) {
+            alermChannels.splice(index, 1);
+            message.channel.send({
+                embed: {
+                    description: 'アラームチャンネルを解除しました。'
+                }
+            });
+        } else {
+            message.channel.send({
+                embed: {
+                    description: 'アラームチャンネルに設定されていません。'
+                }
+            });
+        }
+    } catch(e) {
+        console.log(e);
+    }
+}
+
+
+/* アラームチャンネル */
+
+
+var alermChannels = [];
+
+
+function loadAlermChannels() {
+    
 }
 
 
