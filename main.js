@@ -20,7 +20,7 @@ http.createServer(function(req, res) {
 
 client.on('ready', () => {
     console.log('Botの起動が完了しました。');
-    loadAlermChannels();
+    loadAlarmChannels();
 });
 
 
@@ -49,12 +49,12 @@ function command(message) {
         command_help(message);
         break;
 
-        case 'set':
-        command_set(message);
+        case 'on':
+        command_on(message);
         break;
 
-        case 'unset':
-        command_unset(message);
+        case 'off':
+        command_off(message);
         break;
     }
 }
@@ -87,13 +87,14 @@ function command_help(message) {
 }
 
 
-function command_set(message) {
+function command_on(message) {
     try {
         let ids = message.channel.guild.id + ':' + message.channel.id;
-        let index = alermChannels.indexOf(ids);
+        let index = alarmChannels.indexOf(ids);
 
         if(index == -1) {
-            alermChannels.push(ids);
+            alarmChannels.push(ids);
+            recordAlarmChannels();
             message.channel.send({
                 embed: {
                     description: 'アラームチャンネルを設定しました。'
@@ -112,13 +113,14 @@ function command_set(message) {
 }
 
 
-function command_unset(message) {
+function command_off(message) {
     try {
         let ids = message.channel.guild.id + ':' + message.channel.id;
-        let index = alermChannels.indexOf(ids);
+        let index = alarmChannels.indexOf(ids);
 
         if(index != -1) {
-            alermChannels.splice(index, 1);
+            alarmChannels.splice(index, 1);
+            recordAlarmChannels();
             message.channel.send({
                 embed: {
                     description: 'アラームチャンネルを解除しました。'
@@ -140,11 +142,19 @@ function command_unset(message) {
 /* アラームチャンネル */
 
 
-var alermChannels = [];
+var alarmChannels = [];
 
 
-function loadAlermChannels() {
-    
+function loadAlarmChannels() {
+    let data = fs.readFileSync('alarm_channels.txt', 'utf8');
+    alarmChannels = data != '' ? data.split(',') : []
+    console.log(alarmChannels);
+}
+
+
+function recordAlarmChannels() {
+    console.log(alarmChannels.join(','));
+    fs.writeFileSync('alarm_channels.txt', alarmChannels.join(','), 'utf8');
 }
 
 
