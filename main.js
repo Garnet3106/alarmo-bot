@@ -162,7 +162,7 @@ function recordAlarmChannels() {
 /* EEW受信 */
 
 
-var latestEventID = null;
+var latestEventTimestamp = null;
 
 
 class EEWData {
@@ -197,6 +197,9 @@ class EEWData {
         // 経度
         this.longitude = 0;
 
+        // 最終報かどうか
+        this.isFinal = false;
+
         // 警報の対象地域 (都道府県)
         this.warnPrefectures = [];
 
@@ -222,7 +225,11 @@ function analyzeEEWData(json) {
         // 発表時刻 (Unixタイムスタンプ)
         eewData.announceTimestamp = json['AnnouncedTime']['UnixTime'];
 
-        if(eewData.type != 2) {
+        // 最終報かどうか
+        eewData.isFinal = json['Type']['Detail'].substring(0, 2) == '最終';
+
+        // 予報または警報
+        if(eewData.type == 0 || eewData.type == 1) {
             // 震源地
             eewData.hypocenter = json['Hypocenter']['Name'];
 
@@ -242,6 +249,7 @@ function analyzeEEWData(json) {
             eewData.longitude = json['Hypocenter']['Location']['Long'];
         }
 
+        // キャンセル報
         if(eewData.type == 1) {
             // 警報の対象地域 (都道府県)
             eewData.warnPrefectures = json['WarnForecast']['LocalAreas'];
@@ -412,14 +420,14 @@ setInterval(() => {
 
         let json = JSON.parse(body);
 
-        if(latestEventID != json['EventID']) {
-            //if(latestEventID !== null) {
+        if(latestEventTimestamp != json['AnnouncedTime']['UnixTime']) {
+            //if(latestEventTimestamp !== null) {
                 // EEWデータを解析して送信
                 let eewData = analyzeEEWData(json);
                 sendEEWMessage(eewData);
             //}
 
-            latestEventID = json['EventID'];
+            latestEventTimestamp = json['AnnouncedTime']['UnixTime'];
         }
     });
 }, 5000);
