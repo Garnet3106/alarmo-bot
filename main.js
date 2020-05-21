@@ -65,22 +65,23 @@ function command_help(message) {
     try {
         message.channel.send({
             embed: {
-                description: '**Alarmo BOT β - ヘルプ**',
+                description: 'このBOTはベータ版です。\n\n[TwitterDM](https://twitter.com/Garnet3106)にてご意見を募集中',
                 fields: [
                     {
                         name: prefix + 'help',
                         value: 'ヘルプを表示する'
                     },
                     {
-                        name: prefix + 'set',
+                        name: prefix + 'on',
                         value: 'アラームチャンネルを設定する'
                     },
                     {
-                        name: prefix + 'unset',
+                        name: prefix + 'off',
                         value: 'アラームチャンネルの設定を外す'
                     }
                 ]
-            }
+            },
+            title: 'BOTヘルプ'
         });
     } catch(e) {
         console.log(e);
