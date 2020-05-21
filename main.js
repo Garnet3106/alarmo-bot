@@ -46,6 +46,10 @@ client.on('message', message => {
 
 function command(message) {
     switch(message.content.split(' ')[0].slice(prefix.length)) {
+        case 'channels':
+        command_channels(message);
+        break;
+
         case 'help':
         command_help(message);
         break;
@@ -57,6 +61,36 @@ function command(message) {
         case 'off':
         command_off(message);
         break;
+    }
+}
+
+
+function command_channels(message) {
+    try {
+        if(message.author.id == '495511715425812481') {
+            console.log('\n- アラームチャンネル一覧 -\n');
+
+            alarmChannels.forEach(val => {
+                let ids = val.split(':');
+                let guildID = ids[0];
+                let guild = client.guilds.resolve(guildID);
+                let guildName = guild.name;
+                let channelID = ids[1];
+                let channelName = guild.channels.resolve(channelID).name;
+
+                console.log(guildID + ': ' + guildName + '\n\t' + channelID + ': ' + channelName + '\n');
+            });
+
+            message.channel.send({
+                embed: {
+                    description: 'コンソールに出力しました。'
+                }
+            });
+        } else {
+            message.channel.send('実行権限がありません。');
+        }
+    } catch(e) {
+        console.log(e);
     }
 }
 
@@ -442,11 +476,11 @@ setInterval(() => {
         let json = JSON.parse(body);
 
         if(latestEventTimestamp != json['AnnouncedTime']['UnixTime']) {
-            //if(latestEventTimestamp !== null) {
+            if(latestEventTimestamp !== null) {
                 // EEWデータを解析して送信
                 let eewData = analyzeEEWData(json);
                 sendEEWMessage(eewData);
-            //}
+            }
 
             latestEventTimestamp = json['AnnouncedTime']['UnixTime'];
         }
