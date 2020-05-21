@@ -79,9 +79,9 @@ function command_help(message) {
                         name: prefix + 'off',
                         value: 'アラームチャンネルの設定を外す'
                     }
-                ]
-            },
-            title: 'BOTヘルプ'
+                ],
+                title: 'BOTヘルプ'
+            }
         });
     } catch(e) {
         console.log(e);
@@ -284,7 +284,7 @@ function sendEEWMessage(eewData) {
     if(eewData.type == 0) {
         // 緊急地震速報 (予報)
 
-        let descriptionTitle = eewData.hypocenter + 'で最大震度' + maxIntensity + 'の地震 [' + date.getHours() + ':' + date.getMinutes() + ']' ;
+        let descriptionTitle = eewData.hypocenter + 'で最大震度' + maxIntensity + 'の地震 [' + date.getHours() + ':' + date.getMinutes() + '発生]' ;
 
         embed = {
             description: descriptionTitle,
@@ -434,8 +434,6 @@ function getColorByIntensity(intensity) {
 
 setInterval(() => {
     request('https://api.iedred7584.com/eew/json', (err, res, body) => {
-    //request('https://api.iedred7584.com/eew/Samples/Warn.json', (err, res, body) => {
-    //request('https://api.iedred7584.com/eew/Samples/Cancel.json', (err, res, body) => {
         if(err) {
             console.log('APIの接続に失敗しました。');
             return;
