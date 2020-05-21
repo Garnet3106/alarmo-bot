@@ -283,7 +283,7 @@ function sendEEWMessage(eewData) {
     if(eewData.type == 0) {
         // 緊急地震速報 (予報)
 
-        let descriptionTitle = '[' + date.getHours() + ':' + date.getMinutes() + '] ' + eewData.hypocenter + 'で最大震度' + maxIntensity + 'の地震';
+        let descriptionTitle = eewData.hypocenter + 'で最大震度' + maxIntensity + 'の地震 [' + date.getHours() + ':' + date.getMinutes() + ']' ;
 
         embed = {
             description: descriptionTitle,
@@ -367,9 +367,31 @@ function sendEEWMessage(eewData) {
         };
     }
 
+    if(eewData.type == 2) {
+        // 緊急地震速報 (キャンセル報)
+
+        let descriptionTitle = '__**緊急地震速報は取り消されました。**__';;
+
+        embed = {
+            description: descriptionTitle,
+            color: 0x000000
+        };
+    }
+
     alarmChannels.forEach(val => {
         let ids = val.split(':');
-        client.guilds.resolve(ids[0]).channels.resolve(ids[1]).send({ embed: embed });
+        let channel = client.guilds.resolve(ids[0]).channels.resolve(ids[1]);
+
+        channel.send({ embed: embed });
+
+        if(eewData.isFinal) {
+            channel.send({
+                embed: {
+                    description: '緊急地震速報は以上です。',
+                    color: color
+                }
+            });
+        }
     });
 }
 
@@ -410,9 +432,9 @@ function getColorByIntensity(intensity) {
 
 
 setInterval(() => {
-    // https://api.iedred7584.com/eew/Samples/Warn.json
-    // https://api.iedred7584.com/eew/json
-    request('https://api.iedred7584.com/eew/Samples/Warn.json', (err, res, body) => {
+    request('https://api.iedred7584.com/eew/json', (err, res, body) => {
+    //request('https://api.iedred7584.com/eew/Samples/Warn.json', (err, res, body) => {
+    //request('https://api.iedred7584.com/eew/Samples/Cancel.json', (err, res, body) => {
         if(err) {
             console.log('APIの接続に失敗しました。');
             return;
