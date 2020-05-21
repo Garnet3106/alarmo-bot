@@ -434,7 +434,7 @@ function sendEEWMessage(eewData) {
 function getColorByIntensity(intensity) {
     switch(intensity) {
         case '1':
-        return 0xffffff;
+        return 0xeeeeee;
 
         case '2':
         return 0xafdfe4;
