@@ -7,15 +7,6 @@ const token = process.env.DISCORD_BOT_TOKEN;
 const prefix = 'eew.';
 
 
-/* HTTPSレスポンス */
-
-
-http.createServer(function(req, res) {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('BOTは正常に稼働しています。\n');
-}).listen(8080);
-
-
 /* 準備完了 */
 
 
@@ -76,7 +67,15 @@ function command_channels(message) {
                 let guild = client.guilds.resolve(guildID);
                 let guildName = guild.name;
                 let channelID = ids[1];
-                let channelName = guild.channels.resolve(channelID).name;
+                let channel = guild.channels.resolve(channelID);
+
+                if(channel === null) {
+                    alarmChannels.splice(alarmChannels.indexOf(ids.join(':')), 1);
+                    recordAlarmChannels();
+                    return;
+                }
+
+                let channelName = channel.name;
 
                 console.log(guildID + ': ' + guildName + '\n\t' + channelID + ': ' + channelName + '\n');
             });
@@ -182,15 +181,23 @@ var alarmChannels = [];
 
 
 function loadAlarmChannels() {
-    let data = fs.readFileSync('alarm_channels.txt', 'utf8');
-    alarmChannels = data != '' ? data.split(',') : []
-    console.log('アラームチャンネルを取得しました。');
+    try {
+        let data = fs.readFileSync('alarm_channels.txt', 'utf8');
+        alarmChannels = data != '' ? data.split(',') : []
+        console.log('アラームチャンネルを取得しました。');
+    } catch(e) {
+        console.log(e);
+    }
 }
 
 
 function recordAlarmChannels() {
-    fs.writeFileSync('alarm_channels.txt', alarmChannels.join(','), 'utf8');
-    console.log('アラームチャンネルを記録しました。');
+    try {
+        fs.writeFileSync('alarm_channels.txt', alarmChannels.join(','), 'utf8');
+        console.log('アラームチャンネルを記録しました。');
+    } catch(e) {
+        console.log(e);
+    }
 }
 
 
@@ -301,133 +308,143 @@ function analyzeEEWData(json) {
 
 
 function sendEEWMessage(eewData) {
-    let embed;
+    try {
+        let embed;
 
-    let date = new Date();
-    date.setTime(eewData.timestamp * 1000);
-    date.setHours(date.getHours() - 9);
+        let date = new Date();
+        date.setTime(eewData.timestamp * 1000);
+        date.setHours(date.getHours() - 9);
 
-    let announceDate = new Date();
-    announceDate.setTime(eewData.announceTimestamp * 1000);
-    announceDate.setHours(announceDate.getHours() - 9);
+        let announceDate = new Date();
+        announceDate.setTime(eewData.announceTimestamp * 1000);
+        announceDate.setHours(announceDate.getHours() - 9);
 
-    let color = getColorByIntensity(eewData.maxIntensity);
+        let color = getColorByIntensity(eewData.maxIntensity);
 
-    let maxIntensity = eewData.maxIntensity.replace('-', '弱').replace('+', '強');
+        let maxIntensity = eewData.maxIntensity.replace('-', '弱').replace('+', '強');
 
-    if(eewData.type == 0) {
-        // 緊急地震速報 (予報)
+        if(eewData.type == 0) {
+            // 緊急地震速報 (予報)
 
-        let descriptionTitle = eewData.hypocenter + 'で最大震度' + maxIntensity + 'の地震 [' + date.getHours() + ':' + date.getMinutes() + '発生]' ;
+            let descriptionTitle = eewData.hypocenter + 'で最大震度' + maxIntensity + 'の地震 [' + date.getHours() + ':' + date.getMinutes() + '発生]' ;
 
-        embed = {
-            description: descriptionTitle,
-            color: color,
-            fields: [
-                {
-                    name: '震源地',
-                    value: eewData.hypocenter,
-                    inline: true
+            embed = {
+                description: descriptionTitle,
+                color: color,
+                fields: [
+                    {
+                        name: '震源地',
+                        value: eewData.hypocenter,
+                        inline: true
+                    },
+                    {
+                        name: '最大震度',
+                        value: maxIntensity,
+                        inline: true
+                    },
+                    {
+                        name: 'マグニチュード',
+                        value: 'M' + eewData.magnitude,
+                        inline: true
+                    },
+                    {
+                        name: '発生時刻',
+                        value: date.toLocaleDateString(),
+                        inline: true
+                    },
+                    {
+                        name: '緯度/経度',
+                        value: eewData.latitude + '/' + eewData.longitude,
+                        inline: true
+                    }
+                ],
+                timestamp: announceDate,
+                footer: {
+                    text: eewData.source
                 },
-                {
-                    name: '最大震度',
-                    value: maxIntensity,
-                    inline: true
-                },
-                {
-                    name: 'マグニチュード',
-                    value: 'M' + eewData.magnitude,
-                    inline: true
-                },
-                {
-                    name: '発生時刻',
-                    value: date.toLocaleDateString(),
-                    inline: true
-                },
-                {
-                    name: '緯度/経度',
-                    value: eewData.latitude + '/' + eewData.longitude,
-                    inline: true
-                }
-            ],
-            timestamp: announceDate,
-            footer: {
-                text: eewData.source
-            },
-            title: '緊急地震速報 (予報)'
-        };
-    }
-
-    if(eewData.type == 1) {
-        // 緊急地震速報 (警報)
-
-        let descriptionTitle = '**以下の地域では強い揺れに警戒してください。**';
-        let descriptionIntensity = '__**' + eewData.warnPrefectures.join(' ') + '**__';
-
-        embed = {
-            description: descriptionTitle + '\n\n' + descriptionIntensity,
-            color: color,
-            fields: [
-                {
-                    name: '震源地',
-                    value: eewData.hypocenter,
-                    inline: true
-                },
-                {
-                    name: '最大震度',
-                    value: maxIntensity,
-                    inline: true
-                },
-                {
-                    name: 'マグニチュード',
-                    value: 'M' + eewData.magnitude,
-                    inline: true
-                },
-                {
-                    name: '発生時刻',
-                    value: date.toLocaleDateString(),
-                    inline: true
-                },
-                {
-                    name: '緯度/経度',
-                    value: eewData.latitude + '/' + eewData.longitude,
-                    inline: true
-                }
-            ],
-            timestamp: announceDate,
-            footer: {
-                text: eewData.source
-            },
-            title: '緊急地震速報 (警報)'
-        };
-    }
-
-    if(eewData.type == 2) {
-        // 緊急地震速報 (キャンセル報)
-
-        let descriptionTitle = '__**緊急地震速報は取り消されました。**__';;
-
-        embed = {
-            description: descriptionTitle,
-            color: 0x000000
-        };
-    }
-
-    alarmChannels.forEach(val => {
-        let ids = val.split(':');
-        let channel = client.guilds.resolve(ids[0]).channels.resolve(ids[1]);
-
-        channel.send({ embed: embed });
-
-        if(eewData.isFinal) {
-            channel.send({
-                embed: {
-                    description: '緊急地震速報は以上です。',
-                    color: color
-                }
-            });
+                title: '緊急地震速報 (予報)'
+                };
         }
-    });
+
+        if(eewData.type == 1) {
+            // 緊急地震速報 (警報)
+
+            let descriptionTitle = '**以下の地域では強い揺れに警戒してください。**';
+            let descriptionIntensity = '__**' + eewData.warnPrefectures.join(' ') + '**__';
+
+            embed = {
+                description: descriptionTitle + '\n\n' + descriptionIntensity,
+                color: color,
+                fields: [
+                    {
+                        name: '震源地',
+                        value: eewData.hypocenter,
+                        inline: true
+                    },
+                    {
+                        name: '最大震度',
+                        value: maxIntensity,
+                        inline: true
+                    },
+                    {
+                        name: 'マグニチュード',
+                        value: 'M' + eewData.magnitude,
+                        inline: true
+                    },
+                    {
+                        name: '発生時刻',
+                        value: date.toLocaleDateString(),
+                        inline: true
+                    },
+                    {
+                        name: '緯度/経度',
+                        value: eewData.latitude + '/' + eewData.longitude,
+                        inline: true
+                    }
+                ],
+                timestamp: announceDate,
+                footer: {
+                    text: eewData.source
+                },
+                title: '緊急地震速報 (警報)'
+            };
+        }
+
+        if(eewData.type == 2) {
+            // 緊急地震速報 (キャンセル報)
+
+            let descriptionTitle = '__**緊急地震速報は取り消されました。**__';;
+
+            embed = {
+                description: descriptionTitle,
+                color: 0x000000
+            };
+        }
+
+        alarmChannels.forEach(val => {
+            let ids = val.split(':');
+            let channel = client.guilds.resolve(ids[0]).channels.resolve(ids[1]);
+
+            if(channel === null) {
+                alarmChannels.splice(alarmChannels.indexOf(ids.join(':')), 1);
+                recordAlarmChannels();
+                return;
+            }
+
+            channel.send({ embed: embed });
+
+            if(eewData.isFinal) {
+                channel.send({
+                    embed: {
+                        description: '緊急地震速報は以上です。',
+                        color: color
+                    }
+                });
+            }
+        });
+    } catch(e) {
+        console.log(e);
+    }
 }
 
 
@@ -467,25 +484,32 @@ function getColorByIntensity(intensity) {
 
 
 setInterval(() => {
-    request('https://api.iedred7584.com/eew/json', (err, res, body) => {
-        if(err) {
-            console.log('APIの接続に失敗しました。');
-            return;
-        }
+    let json;
 
-        let json = JSON.parse(body);
-
-        if(latestEventTimestamp != json['AnnouncedTime']['UnixTime']) {
-            if(latestEventTimestamp !== null) {
-                // EEWデータを解析して送信
-                let eewData = analyzeEEWData(json);
-                sendEEWMessage(eewData);
+    try {
+        request('https://api.iedred7584.com/eew/json', (err, res, body) => {
+            if(err) {
+                console.log('APIの接続に失敗しました。');
+                return;
             }
 
-            latestEventTimestamp = json['AnnouncedTime']['UnixTime'];
-        }
-    });
-}, 5000);
+            json = JSON.parse(body);
+
+            if(latestEventTimestamp != json['AnnouncedTime']['UnixTime']) {
+                if(latestEventTimestamp !== null) {
+                    // EEWデータを解析して送信
+                    let eewData = analyzeEEWData(json);
+                    sendEEWMessage(eewData);
+                }
+
+                latestEventTimestamp = json['AnnouncedTime']['UnixTime'];
+            }
+        });
+    } catch(e) {
+        console.log(json);
+        console.log(e);
+    }
+}, 2000);
 
 
 /* 終了処理 */
