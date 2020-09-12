@@ -3,7 +3,7 @@ const fs = require('fs');
 const http = require('http');
 const request = require('request');
 const client = new Discord.Client();
-const token = 'NzEyMjUzNTM2ODM4MzUyOTI2.XtqRHQ.emHiFM1rzeHki0EeL-rUnGqoTcY';
+const token = 'DISCORD_BOT_TOKEN';
 const prefix = 'eew.';
 
 
