@@ -3,7 +3,7 @@ const fs = require('fs');
 const http = require('http');
 const request = require('request');
 const client = new Discord.Client();
-const token = process.env.DISCORD_BOT_TOKEN;
+const token = 'NzEyMjUzNTM2ODM4MzUyOTI2.XtqRHQ.emHiFM1rzeHki0EeL-rUnGqoTcY';
 const prefix = 'eew.';
 
 
@@ -423,7 +423,7 @@ function sendEEWMessage(eewData) {
 
         alarmChannels.forEach(val => {
             let ids = val.split(':');
-            let channel = client.guilds.resolve(ids[0]).channels.resolve(ids[1]);
+            let channel = client.channels.resolve(ids[1]);
 
             if(channel === null) {
                 alarmChannels.splice(alarmChannels.indexOf(ids.join(':')), 1);
@@ -484,16 +484,14 @@ function getColorByIntensity(intensity) {
 
 
 setInterval(() => {
-    let json;
-
-    try {
-        request('https://api.iedred7584.com/eew/json', (err, res, body) => {
+    request('https://api.iedred7584.com/eew/json', (err, res, body) => {
+        try {
             if(err) {
                 console.log('APIの接続に失敗しました。');
                 return;
             }
 
-            json = JSON.parse(body);
+            let json = JSON.parse(body);
 
             if(latestEventTimestamp != json['AnnouncedTime']['UnixTime']) {
                 if(latestEventTimestamp !== null) {
@@ -504,12 +502,11 @@ setInterval(() => {
 
                 latestEventTimestamp = json['AnnouncedTime']['UnixTime'];
             }
-        });
-    } catch(e) {
-        console.log(json);
-        console.log(e);
-    }
-}, 2000);
+        } catch(e) {
+            console.log(e);
+        }
+    });
+}, 5000);
 
 
 /* 終了処理 */
